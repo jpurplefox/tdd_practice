@@ -9,6 +9,6 @@ class Moves(APIView):
         move = Move.objects.get(id=request.POST.get('move_id'))
         pokemon = Pokemon.objects.get(pk=pk)
         if move in pokemon.known_moves.all():
-            return Response({}, status=400)
+            return Response({'error': f'{pokemon.specie} already knows {move.name}'}, status=400)
         pokemon.known_moves.add(move)
         return Response()
