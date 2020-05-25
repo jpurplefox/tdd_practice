@@ -22,3 +22,13 @@ class Pokemon(models.Model):
     nickname = models.CharField(max_length=200)
     level = models.IntegerField()
     known_moves = models.ManyToManyField(Move)
+
+    class CanNotLearnMove(Exception):
+        pass
+
+    def learn(self, move):
+        if self.known_moves.count() == 4:
+            raise self.CanNotLearnMove(f'{self.specie} can not learn more than four moves')
+        if move in self.known_moves.all():
+            raise self.CanNotLearnMove(f'{self.specie} already knows {move.name}')
+        self.known_moves.add(move)
