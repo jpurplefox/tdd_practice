@@ -31,5 +31,7 @@ class LearningMovesTestCase(APITestCase):
         response = self.client.post(url, {'move_id': ember.id})
 
         self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.data)
+        self.assertEqual('charmander already knows ember', response.data['error'])
 
         self.assertEqual(charmander.known_moves.count(), 1)
