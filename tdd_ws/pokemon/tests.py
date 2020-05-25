@@ -25,7 +25,7 @@ class LearningMovesTestCase(APITestCase):
         charmander = Pokemon.objects.create(specie='charmander', level=5, team=team)
 
         ember = Move.objects.create(name='ember', power=40)
-        charmander.known_moves.add(ember)
+        charmander.learn(ember)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
         response = self.client.post(url, {'move_id': ember.id})
@@ -45,10 +45,10 @@ class LearningMovesTestCase(APITestCase):
         growl = Move.objects.create(name='growl', power=0)
         ember = Move.objects.create(name='ember', power=40)
         smokescreen = Move.objects.create(name='smokescreen', power=0)
-        charmander.known_moves.add(scratch)
-        charmander.known_moves.add(growl)
-        charmander.known_moves.add(ember)
-        charmander.known_moves.add(smokescreen)
+        charmander.learn(scratch)
+        charmander.learn(growl)
+        charmander.learn(ember)
+        charmander.learn(smokescreen)
 
         dragon_breath = Move.objects.create(name='dragon-breath', power=60)
 
