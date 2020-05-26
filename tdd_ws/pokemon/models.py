@@ -1,6 +1,8 @@
-import requests
-
 from django.db import models
+
+from pokemon.integrations import MoveLearningChecker
+
+move_learning_checker = MoveLearningChecker()
 
 
 class Move(models.Model):
@@ -36,6 +38,4 @@ class Pokemon(models.Model):
         self.known_moves.add(move)
 
     def can_learn(self, move):
-        response = requests.get(f'https://pokeapi.co/api/v2/pokemon/{self.specie}/')
-        moves = [move_data['move']['name'] for move_data in response.json()['moves']]
-        return move.name in moves
+        return move_learning_checker.a_specie_can_learn(self.specie, move.name)

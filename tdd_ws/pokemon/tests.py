@@ -31,21 +31,25 @@ class FakeRequests:
         return response
 
 
+class FakeMoveLearningChecker:
+    def __init__(self, species):
+        self.species = species
+
+    def a_specie_can_learn(self, specie, move):
+        return move in self.species[specie]
+
+
 class LearningMovesTestCase(APITestCase):
     def test_a_pokemon_can_learn_a_new_move(self):
-        fake_requests = FakeRequests({
-            'https://pokeapi.co/api/v2/pokemon/charmander/': {
-                'moves': [
-                    {'move': {'name': 'ember', 'url': 'https://pokeapi.co/api/v2/move/52/'}},
-                ]
-            }
+        fake_checker = FakeMoveLearningChecker({
+            'charmander': ['ember'],
         })
         charmander = PokemonFactory(specie='charmander')
 
         ember = MoveFactory(name='ember', power=40)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.requests', fake_requests):
+        with patch('pokemon.models.move_learning_checker', fake_checker):
             response = self.client.post(url, {'move_id': ember.id})
 
         self.assertEqual(response.status_code, 200)
@@ -54,12 +58,8 @@ class LearningMovesTestCase(APITestCase):
         self.assertIn(ember, charmander.known_moves.all())
 
     def test_a_pokemon_can_not_learn_a_move_twice(self):
-        fake_requests = FakeRequests({
-            'https://pokeapi.co/api/v2/pokemon/charmander/': {
-                'moves': [
-                    {'move': {'name': 'ember', 'url': 'https://pokeapi.co/api/v2/move/52/'}},
-                ]
-            }
+        fake_checker = FakeMoveLearningChecker({
+            'charmander': ['ember'],
         })
         charmander = PokemonFactory(specie='charmander')
 
@@ -67,7 +67,7 @@ class LearningMovesTestCase(APITestCase):
         charmander.learn(ember)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.requests', fake_requests):
+        with patch('pokemon.models.move_learning_checker', fake_checker):
             response = self.client.post(url, {'move_id': ember.id})
 
         self.assertEqual(response.status_code, 400)
@@ -77,12 +77,8 @@ class LearningMovesTestCase(APITestCase):
         self.assertEqual(charmander.known_moves.count(), 1)
 
     def test_a_pokemon_can_not_learn_more_than_four_moves(self):
-        fake_requests = FakeRequests({
-            'https://pokeapi.co/api/v2/pokemon/charmander/': {
-                'moves': [
-                    {'move': {'name': 'dragon-breath', 'url': 'https://pokeapi.co/api/v2/move/225/'}},
-                ]
-            }
+        fake_checker = FakeMoveLearningChecker({
+            'charmander': ['dragon-breath'],
         })
         charmander = PokemonFactory(specie='charmander')
         for move in MoveFactory.create_batch(4):
@@ -91,7 +87,7 @@ class LearningMovesTestCase(APITestCase):
         dragon_breath = MoveFactory(name='dragon-breath', power=60)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.requests', fake_requests):
+        with patch('pokemon.models.move_learning_checker', fake_checker):
             response = self.client.post(url, {'move_id': dragon_breath.id})
 
         self.assertEqual(response.status_code, 400)
@@ -102,19 +98,15 @@ class LearningMovesTestCase(APITestCase):
         self.assertNotIn(dragon_breath, charmander.known_moves.all())
 
     def test_a_pokemon_can_not_learn_a_move_not_available_for_his_specie(self):
-        fake_requests = FakeRequests({
-            'https://pokeapi.co/api/v2/pokemon/charmander/': {
-                'moves': [
-                    {'move': {'name': 'ember', 'url': 'https://pokeapi.co/api/v2/move/52/'}},
-                ]
-            }
+        fake_checker = FakeMoveLearningChecker({
+            'charmander': ['dragon-breath'],
         })
         charmander = PokemonFactory(specie='charmander')
 
         bubble = MoveFactory(name='bubble', power=40)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.requests', fake_requests):
+        with patch('pokemon.models.move_learning_checker', fake_checker):
             response = self.client.post(url, {'move_id': bubble.id})
 
         self.assertEqual(response.status_code, 400)
