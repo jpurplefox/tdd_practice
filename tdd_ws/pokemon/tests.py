@@ -1,8 +1,10 @@
 from unittest.mock import patch
 
+from django.test import TestCase
 from rest_framework.test import APITestCase
 
 from pokemon.factories import PokemonFactory, MoveFactory
+from pokemon.integrations import MoveLearningChecker
 
 
 class FakeResponse:
@@ -120,3 +122,29 @@ class LearningMovesTestCase(APITestCase):
         self.assertEqual('charmander can not learn bubble', response.data['error'])
 
         self.assertEqual(charmander.known_moves.count(), 0)
+
+
+class MoveLearningCheckerTestCase(TestCase):
+    def test_a_specie_can_learn_a_move(self):
+        fake_requests = FakeRequests({
+            'https://pokeapi.co/api/v2/pokemon/charmander/': {
+                'moves': [
+                    {'move': {'name': 'ember', 'url': 'https://pokeapi.co/api/v2/move/52/'}},
+                ]
+            }
+        })
+
+        with patch('pokemon.integrations.requests', fake_requests):
+            self.assertTrue(MoveLearningChecker().a_specie_can_learn('charmander', 'ember'))
+
+    def test_a_specie_can_not_learn_a_move(self):
+        fake_requests = FakeRequests({
+            'https://pokeapi.co/api/v2/pokemon/charmander/': {
+                'moves': [
+                    {'move': {'name': 'ember', 'url': 'https://pokeapi.co/api/v2/move/52/'}},
+                ]
+            }
+        })
+
+        with patch('pokemon.integrations.requests', fake_requests):
+            self.assertFalse(MoveLearningChecker().a_specie_can_learn('charmander', 'bubble'))
