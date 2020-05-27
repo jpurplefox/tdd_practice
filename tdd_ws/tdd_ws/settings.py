@@ -120,3 +120,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+from pokemon.integrations import MoveLearningChecker
+MOVE_LEARNING_CHECKER = MoveLearningChecker()

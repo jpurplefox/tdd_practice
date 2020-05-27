@@ -1,8 +1,5 @@
 from django.db import models
-
-from pokemon.integrations import MoveLearningChecker
-
-move_learning_checker = MoveLearningChecker()
+from django.conf import settings
 
 
 class Move(models.Model):
@@ -38,4 +35,4 @@ class Pokemon(models.Model):
         self.known_moves.add(move)
 
     def can_learn(self, move):
-        return move_learning_checker.a_specie_can_learn(self.specie, move.name)
+        return settings.MOVE_LEARNING_CHECKER.a_specie_can_learn(self.specie, move.name)

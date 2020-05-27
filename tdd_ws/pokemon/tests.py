@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from rest_framework.test import APITestCase
 
 from pokemon.factories import PokemonFactory, MoveFactory
@@ -40,35 +40,33 @@ class FakeMoveLearningChecker:
 
 
 class LearningMovesTestCase(APITestCase):
+    @override_settings(MOVE_LEARNING_CHECKER=FakeMoveLearningChecker(
+        {'charmander': ['ember'],}
+    ))
     def test_a_pokemon_can_learn_a_new_move(self):
-        fake_checker = FakeMoveLearningChecker({
-            'charmander': ['ember'],
-        })
         charmander = PokemonFactory(specie='charmander')
 
         ember = MoveFactory(name='ember', power=40)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.move_learning_checker', fake_checker):
-            response = self.client.post(url, {'move_id': ember.id})
+        response = self.client.post(url, {'move_id': ember.id})
 
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(charmander.known_moves.count(), 1)
         self.assertIn(ember, charmander.known_moves.all())
 
+    @override_settings(MOVE_LEARNING_CHECKER=FakeMoveLearningChecker(
+        {'charmander': ['ember'],}
+    ))
     def test_a_pokemon_can_not_learn_a_move_twice(self):
-        fake_checker = FakeMoveLearningChecker({
-            'charmander': ['ember'],
-        })
         charmander = PokemonFactory(specie='charmander')
 
         ember = MoveFactory(name='ember', power=40)
         charmander.learn(ember)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.move_learning_checker', fake_checker):
-            response = self.client.post(url, {'move_id': ember.id})
+        response = self.client.post(url, {'move_id': ember.id})
 
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.data)
@@ -76,10 +74,10 @@ class LearningMovesTestCase(APITestCase):
 
         self.assertEqual(charmander.known_moves.count(), 1)
 
+    @override_settings(MOVE_LEARNING_CHECKER=FakeMoveLearningChecker(
+        {'charmander': ['dragon-breath'],}
+    ))
     def test_a_pokemon_can_not_learn_more_than_four_moves(self):
-        fake_checker = FakeMoveLearningChecker({
-            'charmander': ['dragon-breath'],
-        })
         charmander = PokemonFactory(specie='charmander')
         for move in MoveFactory.create_batch(4):
             charmander.learn(move)
@@ -87,8 +85,7 @@ class LearningMovesTestCase(APITestCase):
         dragon_breath = MoveFactory(name='dragon-breath', power=60)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.move_learning_checker', fake_checker):
-            response = self.client.post(url, {'move_id': dragon_breath.id})
+        response = self.client.post(url, {'move_id': dragon_breath.id})
 
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.data)
@@ -97,17 +94,16 @@ class LearningMovesTestCase(APITestCase):
         self.assertEqual(charmander.known_moves.count(), 4)
         self.assertNotIn(dragon_breath, charmander.known_moves.all())
 
+    @override_settings(MOVE_LEARNING_CHECKER=FakeMoveLearningChecker(
+        {'charmander': ['dragon-breath'],}
+    ))
     def test_a_pokemon_can_not_learn_a_move_not_available_for_his_specie(self):
-        fake_checker = FakeMoveLearningChecker({
-            'charmander': ['dragon-breath'],
-        })
         charmander = PokemonFactory(specie='charmander')
 
         bubble = MoveFactory(name='bubble', power=40)
 
         url = '/pokemon/{}/moves/'.format(charmander.pk)
-        with patch('pokemon.models.move_learning_checker', fake_checker):
-            response = self.client.post(url, {'move_id': bubble.id})
+        response = self.client.post(url, {'move_id': bubble.id})
 
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.data)
