@@ -6,7 +6,7 @@ from pokemon.models import Pokemon, Move
 
 class Moves(APIView):
     def post(self, request, pk):
-        move = Move.objects.get(id=request.POST.get('move_id'))
+        move = Move.objects.get(id=request.data.get('move_id'))
         pokemon = Pokemon.objects.get(pk=pk)
         try:
             if pokemon.can_learn(move):
